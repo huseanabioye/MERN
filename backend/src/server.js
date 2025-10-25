@@ -1,11 +1,16 @@
 import express from "express";
 
-import cors from "cors"
+import cors from "cors";
+import dotenv from 'dotenv';
+
+import path from 'path';
 
 import noteRouter from "./routers/noteRouter.js";
 import { connectDB } from "./config/db.js";
-import dotenv from "dotenv";
+
 import ratelimiter from "./middleware/ratelimiter.js";
+
+
 
 
 dotenv.config();
@@ -14,13 +19,22 @@ console.log(process.env.MONGO_URL)
 
 const app =  express();
 
+const PORT = process.env.PORT || 5001;
+
+const __dirname = path.resolve();
+
+console.log(__dirname)
+
 // connectDB();
 
 // middleware
-
-app.use(cors({
+if(process.env.NODE_ENV !== "production"){
+  
+  app.use(cors({
   origin:"http://localhost:5173"
 }))
+}
+
 app.use(express.json());
 
 app.use(ratelimiter);
@@ -28,7 +42,13 @@ app.use(ratelimiter);
 
 app.use("/api/v1/notes", noteRouter);
 
-const PORT = process.env.PORT || 5001;
+app.use(express.static(path.join(__dirname,"../frontend/vite-project/dist")))
+
+if(process.env.NODE_ENV === "production"){
+  app.get("*", (req,res) =>{
+  res.sendFile(path.join(__dirname, "../frontend/vite-project", "dist", "index.html"));
+});
+}
 
 // app.listen(port,  ()=>{
     // console.log("Server is running on port", port)
